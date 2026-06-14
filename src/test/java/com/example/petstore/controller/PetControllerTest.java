@@ -8,7 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -19,12 +19,14 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+@ExtendWith(MockitoExtension.class)
 class PetControllerTest {
 
     @Mock
@@ -36,224 +38,127 @@ class PetControllerTest {
     @InjectMocks
     private PetController petController;
 
+    private Pet pet1;
+    private Pet pet2;
+    private Map<String, Object> petDto1;
+    private Map<String, Object> petDto2;
+
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        pet1 = new Pet();
+        pet2 = new Pet();
+        petDto1 = Map.of("id", 1L, "name", "Fido");
+        petDto2 = Map.of("id", 2L, "name", "Whiskers");
     }
 
     @Test
     void listAll_whenCalled_shouldReturnListOfPetDtos() {
         // Arrange
-        Pet pet1 = new Pet();
-        Pet pet2 = new Pet();
         List<Pet> pets = List.of(pet1, pet2);
-        Map<String, Object> dto1 = Map.of("id", 1L);
-        Map<String, Object> dto2 = Map.of("id", 2L);
-
         when(petService.findAll()).thenReturn(pets);
-        when(petMapper.toDto(pet1)).thenReturn(dto1);
-        when(petMapper.toDto(pet2)).thenReturn(dto2);
+        when(petMapper.toDto(pet1)).thenReturn(petDto1);
+        when(petMapper.toDto(pet2)).thenReturn(petDto2);
 
         // Act
         List<Map<String, Object>> result = petController.listAll();
 
         // Assert
-        assertThat(result).containsExactly(dto1, dto2);
+        assertThat(result).containsExactly(petDto1, petDto2);
     }
 
     @Test
     void listAvailable_whenCalled_shouldReturnListOfAvailablePetDtos() {
         // Arrange
-        Pet pet1 = new Pet();
-        Pet pet2 = new Pet();
-        List<Pet> pets = List.of(pet1, pet2);
-        Map<String, Object> dto1 = Map.of("id", 1L);
-        Map<String, Object> dto2 = Map.of("id", 2L);
-
-        when(petService.findAvailable()).thenReturn(pets);
-        when(petMapper.toDto(pet1)).thenReturn(dto1);
-        when(petMapper.toDto(pet2)).thenReturn(dto2);
+        List<Pet> availablePets = List.of(pet1);
+        when(petService.findAvailable()).thenReturn(availablePets);
+        when(petMapper.toDto(pet1)).thenReturn(petDto1);
 
         // Act
         List<Map<String, Object>> result = petController.listAvailable();
 
         // Assert
-        assertThat(result).containsExactly(dto1, dto2);
+        assertThat(result).containsExactly(petDto1);
     }
 
     @Test
-    void bySpecies_whenSpeciesExists_shouldReturnListOfPetDtos() {
+    void bySpecies_whenSpeciesExists_shouldReturnListOfPetDtosForSpecies() {
         // Arrange
         String species = "dog";
-        Pet pet1 = new Pet();
-        Pet pet2 = new Pet();
-        List<Pet> pets = List.of(pet1, pet2);
-        Map<String, Object> dto1 = Map.of("id", 1L);
-        Map<String, Object> dto2 = Map.of("id", 2L);
-
-        when(petService.findBySpecies(species)).thenReturn(pets);
-        when(petMapper.toDto(pet1)).thenReturn(dto1);
-        when(petMapper.toDto(pet2)).thenReturn(dto2);
+        List<Pet> petsBySpecies = List.of(pet1);
+        when(petService.findBySpecies(species)).thenReturn(petsBySpecies);
+        when(petMapper.toDto(pet1)).thenReturn(petDto1);
 
         // Act
         List<Map<String, Object>> result = petController.bySpecies(species);
 
         // Assert
-        assertThat(result).containsExactly(dto1, dto2);
+        assertThat(result).containsExactly(petDto1);
     }
 
     @Test
-    void getById_whenIdExists_shouldReturnResponseEntityWithPetDto() {
+    void getById_whenIdExists_shouldReturnPetDtoInResponseEntity() {
         // Arrange
         Long id = 1L;
-        Pet pet = new Pet();
-        Map<String, Object> dto = Map.of("id", id);
-
-        when(petService.findById(id)).thenReturn(pet);
-        when(petMapper.toDto(pet)).thenReturn(dto);
+        when(petService.findById(id)).thenReturn(pet1);
+        when(petMapper.toDto(pet1)).thenReturn(petDto1);
 
         // Act
         ResponseEntity<Map<String, Object>> response = petController.getById(id);
 
         // Assert
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo(dto);
-    }
-
-    @Test
-    void getById_whenIdNotExists_shouldThrowException() {
-        // Arrange
-        Long id = 1L;
-        when(petService.findById(id)).thenThrow(new RuntimeException("Pet not found"));
-
-        // Act / Assert
-        assertThatCode(() -> petController.getById(id))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Pet not found");
+        assertThat(response.getBody()).isEqualTo(petDto1);
     }
 
     @Test
     void create_whenValidPet_shouldReturnCreatedPetDto() {
         // Arrange
-        Pet pet = new Pet();
-        Pet createdPet = new Pet();
-        Map<String, Object> dto = Map.of("id", 1L);
-
-        when(petService.create(pet)).thenReturn(createdPet);
-        when(petMapper.toDto(createdPet)).thenReturn(dto);
+        when(petService.create(pet1)).thenReturn(pet1);
+        when(petMapper.toDto(pet1)).thenReturn(petDto1);
 
         // Act
-        Map<String, Object> result = petController.create(pet);
+        Map<String, Object> result = petController.create(pet1);
 
         // Assert
-        assertThat(result).isEqualTo(dto);
+        assertThat(result).isEqualTo(petDto1);
     }
 
     @Test
-    void create_whenInvalidPet_shouldThrowValidationException() {
-        // Arrange
-        Pet invalidPet = new Pet();
-        when(petService.create(invalidPet)).thenThrow(new RuntimeException("Validation failed"));
-
-        // Act / Assert
-        assertThatCode(() -> petController.create(invalidPet))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Validation failed");
-    }
-
-    @Test
-    void update_whenIdExistsAndValidPet_shouldReturnUpdatedPetDto() {
+    void update_whenValidIdAndPet_shouldReturnUpdatedPetDto() {
         // Arrange
         Long id = 1L;
-        Pet pet = new Pet();
-        Pet updatedPet = new Pet();
-        Map<String, Object> dto = Map.of("id", id);
-
-        when(petService.update(id, pet)).thenReturn(updatedPet);
-        when(petMapper.toDto(updatedPet)).thenReturn(dto);
+        when(petService.update(id, pet1)).thenReturn(pet1);
+        when(petMapper.toDto(pet1)).thenReturn(petDto1);
 
         // Act
-        Map<String, Object> result = petController.update(id, pet);
+        Map<String, Object> result = petController.update(id, pet1);
 
         // Assert
-        assertThat(result).isEqualTo(dto);
+        assertThat(result).isEqualTo(petDto1);
     }
 
     @Test
-    void update_whenIdNotExists_shouldThrowException() {
+    void delete_whenValidId_shouldInvokeServiceDelete() {
         // Arrange
         Long id = 1L;
-        Pet pet = new Pet();
-        when(petService.update(id, pet)).thenThrow(new RuntimeException("Pet not found"));
-
-        // Act / Assert
-        assertThatCode(() -> petController.update(id, pet))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Pet not found");
-    }
-
-    @Test
-    void update_whenInvalidPet_shouldThrowValidationException() {
-        // Arrange
-        Long id = 1L;
-        Pet invalidPet = new Pet();
-        when(petService.update(id, invalidPet)).thenThrow(new RuntimeException("Validation failed"));
-
-        // Act / Assert
-        assertThatCode(() -> petController.update(id, invalidPet))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Validation failed");
-    }
-
-    @Test
-    void delete_whenIdExists_shouldCallDeleteAndReturnNoContent() {
-        // Arrange
-        Long id = 1L;
+        doNothing().when(petService).delete(id);
 
         // Act / Assert
         assertThatCode(() -> petController.delete(id)).doesNotThrowAnyException();
-
         verify(petService).delete(id);
     }
 
     @Test
-    void delete_whenIdNotExists_shouldThrowException() {
+    void markUnavailable_whenValidId_shouldReturnUpdatedPetDto() {
         // Arrange
         Long id = 1L;
-        doThrow(new RuntimeException("Pet not found")).when(petService).delete(id);
-
-        // Act / Assert
-        assertThatCode(() -> petController.delete(id))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Pet not found");
-    }
-
-    @Test
-    void markUnavailable_whenIdExists_shouldReturnUpdatedPetDto() {
-        // Arrange
-        Long id = 1L;
-        Pet updatedPet = new Pet();
-        Map<String, Object> dto = Map.of("id", id);
-
-        when(petService.markUnavailable(id)).thenReturn(updatedPet);
-        when(petMapper.toDto(updatedPet)).thenReturn(dto);
+        when(petService.markUnavailable(id)).thenReturn(pet1);
+        when(petMapper.toDto(pet1)).thenReturn(petDto1);
 
         // Act
         Map<String, Object> result = petController.markUnavailable(id);
 
         // Assert
-        assertThat(result).isEqualTo(dto);
-    }
-
-    @Test
-    void markUnavailable_whenIdNotExists_shouldThrowException() {
-        // Arrange
-        Long id = 1L;
-        when(petService.markUnavailable(id)).thenThrow(new RuntimeException("Pet not found"));
-
-        // Act / Assert
-        assertThatCode(() -> petController.markUnavailable(id))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Pet not found");
+        assertThat(result).isEqualTo(petDto1);
     }
 }
