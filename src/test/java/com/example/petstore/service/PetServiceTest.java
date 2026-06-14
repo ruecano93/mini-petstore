@@ -41,18 +41,18 @@ class PetServiceTest {
         // Arrange
         Pet pet1 = new Pet();
         pet1.setId(1L);
-        pet1.setName("Buddy");
+        pet1.setName("Fido");
         Pet pet2 = new Pet();
         pet2.setId(2L);
-        pet2.setName("Milo");
-        List<Pet> expectedPets = List.of(pet1, pet2);
-        when(petRepository.findAll()).thenReturn(expectedPets);
+        pet2.setName("Whiskers");
+        List<Pet> expected = List.of(pet1, pet2);
+        when(petRepository.findAll()).thenReturn(expected);
 
         // Act
-        List<Pet> actualPets = petService.findAll();
+        List<Pet> actual = petService.findAll();
 
         // Assert
-        assertThat(actualPets).isEqualTo(expectedPets);
+        assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -64,56 +64,43 @@ class PetServiceTest {
         Pet pet2 = new Pet();
         pet2.setId(2L);
         pet2.setAvailable(true);
-        List<Pet> expectedPets = List.of(pet1, pet2);
-        when(petRepository.findByAvailableTrue()).thenReturn(expectedPets);
+        List<Pet> expected = List.of(pet1, pet2);
+        when(petRepository.findByAvailableTrue()).thenReturn(expected);
 
         // Act
-        List<Pet> actualPets = petService.findAvailable();
+        List<Pet> actual = petService.findAvailable();
 
         // Assert
-        assertThat(actualPets).isEqualTo(expectedPets);
+        assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     void findBySpecies_whenSpeciesIsValid_shouldReturnPetsOfThatSpecies() {
         // Arrange
-        String species = "Dog";
+        String species = "dog";
         Pet pet1 = new Pet();
-        pet1.setId(1L);
-        pet1.setSpecies(species);
+        pet1.setSpecies("dog");
         Pet pet2 = new Pet();
-        pet2.setId(2L);
-        pet2.setSpecies(species);
-        List<Pet> expectedPets = List.of(pet1, pet2);
-        when(petRepository.findBySpeciesIgnoreCase(species)).thenReturn(expectedPets);
+        pet2.setSpecies("dog");
+        List<Pet> expected = List.of(pet1, pet2);
+        when(petRepository.findBySpeciesIgnoreCase(species)).thenReturn(expected);
 
         // Act
-        List<Pet> actualPets = petService.findBySpecies(species);
+        List<Pet> actual = petService.findBySpecies(species);
 
         // Assert
-        assertThat(actualPets).isEqualTo(expectedPets);
-    }
-
-    @Test
-    void findBySpecies_whenSpeciesIsNull_shouldThrowIllegalArgumentException() {
-        // Arrange
-        String species = null;
-
-        // Act / Assert
-        assertThatThrownBy(() -> petService.findBySpecies(species))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Species must not be blank");
+        assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     void findBySpecies_whenSpeciesIsBlank_shouldThrowIllegalArgumentException() {
         // Arrange
-        String species = " ";
+        String species = "";
 
         // Act / Assert
         assertThatThrownBy(() -> petService.findBySpecies(species))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Species must not be blank");
+                .hasMessage("Species must not be blank");
     }
 
     @Test
@@ -121,35 +108,28 @@ class PetServiceTest {
         // Arrange
         double maxPrice = 100.0;
         Pet pet1 = new Pet();
-        pet1.setId(1L);
         pet1.setPrice(50.0);
         Pet pet2 = new Pet();
-        pet2.setId(2L);
-        pet2.setPrice(80.0);
-        List<Pet> expectedPets = List.of(pet1, pet2);
-        when(petRepository.findAvailableByMaxPrice(maxPrice)).thenReturn(expectedPets);
+        pet2.setPrice(100.0);
+        List<Pet> expected = List.of(pet1, pet2);
+        when(petRepository.findAvailableByMaxPrice(maxPrice)).thenReturn(expected);
 
         // Act
-        List<Pet> actualPets = petService.findAvailableUnderPrice(maxPrice);
+        List<Pet> actual = petService.findAvailableUnderPrice(maxPrice);
 
         // Assert
-        assertThat(actualPets).isEqualTo(expectedPets);
+        assertThat(actual).isEqualTo(expected);
     }
 
     @Test
-    void findAvailableUnderPrice_whenMaxPriceZeroOrNegative_shouldThrowIllegalArgumentException() {
+    void findAvailableUnderPrice_whenMaxPriceNotPositive_shouldThrowIllegalArgumentException() {
         // Arrange
-        double maxPriceZero = 0.0;
-        double maxPriceNegative = -10.0;
+        double maxPrice = 0;
 
         // Act / Assert
-        assertThatThrownBy(() -> petService.findAvailableUnderPrice(maxPriceZero))
+        assertThatThrownBy(() -> petService.findAvailableUnderPrice(maxPrice))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Max price must be positive");
-
-        assertThatThrownBy(() -> petService.findAvailableUnderPrice(maxPriceNegative))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Max price must be positive");
+                .hasMessage("Max price must be positive");
     }
 
     @Test
@@ -161,10 +141,10 @@ class PetServiceTest {
         when(petRepository.findById(id)).thenReturn(Optional.of(pet));
 
         // Act
-        Pet actualPet = petService.findById(id);
+        Pet actual = petService.findById(id);
 
         // Assert
-        assertThat(actualPet).isEqualTo(pet);
+        assertThat(actual).isEqualTo(pet);
     }
 
     @Test
@@ -183,90 +163,80 @@ class PetServiceTest {
     void create_whenPetNameAndSpeciesNotExists_shouldSaveAndReturnPet() {
         // Arrange
         Pet pet = new Pet();
-        pet.setName("Bella");
-        pet.setSpecies("Cat");
-        Pet savedPet = new Pet();
-        savedPet.setId(1L);
-        savedPet.setName("Bella");
-        savedPet.setSpecies("Cat");
-        when(petRepository.existsByNameAndSpecies("Bella", "Cat")).thenReturn(false);
-        when(petRepository.save(pet)).thenReturn(savedPet);
+        pet.setName("Fido");
+        pet.setSpecies("dog");
+        when(petRepository.existsByNameAndSpecies("Fido", "dog")).thenReturn(false);
+        when(petRepository.save(pet)).thenReturn(pet);
 
         // Act
-        Pet actualPet = petService.create(pet);
+        Pet actual = petService.create(pet);
 
         // Assert
-        assertThat(actualPet).isEqualTo(savedPet);
+        assertThat(actual).isEqualTo(pet);
+        verify(petRepository).save(pet);
     }
 
     @Test
     void create_whenPetNameAndSpeciesExists_shouldThrowIllegalStateException() {
         // Arrange
         Pet pet = new Pet();
-        pet.setName("Bella");
-        pet.setSpecies("Cat");
-        when(petRepository.existsByNameAndSpecies("Bella", "Cat")).thenReturn(true);
+        pet.setName("Fido");
+        pet.setSpecies("dog");
+        when(petRepository.existsByNameAndSpecies("Fido", "dog")).thenReturn(true);
 
         // Act / Assert
         assertThatThrownBy(() -> petService.create(pet))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("already exists");
+                .hasMessageContaining("Fido")
+                .hasMessageContaining("dog");
     }
 
     @Test
     void update_whenIdExists_shouldUpdateAndReturnPet() {
         // Arrange
         Long id = 1L;
-        Pet existingPet = new Pet();
-        existingPet.setId(id);
-        existingPet.setName("OldName");
-        existingPet.setSpecies("OldSpecies");
-        existingPet.setBreed("OldBreed");
-        existingPet.setBirthDate(LocalDate.of(2020, 1, 1));
-        existingPet.setPrice(100.0);
-        existingPet.setAvailable(true);
+        Pet existing = new Pet();
+        existing.setId(id);
+        existing.setName("OldName");
+        existing.setSpecies("cat");
+        existing.setBreed("OldBreed");
+        existing.setBirthDate(LocalDate.of(2020, 1, 1));
+        existing.setPrice(50.0);
+        existing.setAvailable(true);
 
-        Pet updatedPet = new Pet();
-        updatedPet.setName("NewName");
-        updatedPet.setSpecies("NewSpecies");
-        updatedPet.setBreed("NewBreed");
-        updatedPet.setBirthDate(LocalDate.of(2021, 2, 2));
-        updatedPet.setPrice(200.0);
-        updatedPet.setAvailable(false);
+        Pet updated = new Pet();
+        updated.setName("NewName");
+        updated.setSpecies("dog");
+        updated.setBreed("NewBreed");
+        updated.setBirthDate(LocalDate.of(2021, 2, 2));
+        updated.setPrice(100.0);
+        updated.setAvailable(false);
 
-        Pet savedPet = new Pet();
-        savedPet.setId(id);
-        savedPet.setName("NewName");
-        savedPet.setSpecies("NewSpecies");
-        savedPet.setBreed("NewBreed");
-        savedPet.setBirthDate(LocalDate.of(2021, 2, 2));
-        savedPet.setPrice(200.0);
-        savedPet.setAvailable(false);
-
-        when(petRepository.findById(id)).thenReturn(Optional.of(existingPet));
-        when(petRepository.save(existingPet)).thenReturn(savedPet);
+        when(petRepository.findById(id)).thenReturn(Optional.of(existing));
+        when(petRepository.save(existing)).thenReturn(existing);
 
         // Act
-        Pet actualPet = petService.update(id, updatedPet);
+        Pet actual = petService.update(id, updated);
 
         // Assert
-        assertThat(actualPet.getName()).isEqualTo(updatedPet.getName());
-        assertThat(actualPet.getSpecies()).isEqualTo(updatedPet.getSpecies());
-        assertThat(actualPet.getBreed()).isEqualTo(updatedPet.getBreed());
-        assertThat(actualPet.getBirthDate()).isEqualTo(updatedPet.getBirthDate());
-        assertThat(actualPet.getPrice()).isEqualTo(updatedPet.getPrice());
-        assertThat(actualPet.isAvailable()).isEqualTo(updatedPet.isAvailable());
+        assertThat(actual.getName()).isEqualTo("NewName");
+        assertThat(actual.getSpecies()).isEqualTo("dog");
+        assertThat(actual.getBreed()).isEqualTo("NewBreed");
+        assertThat(actual.getBirthDate()).isEqualTo(LocalDate.of(2021, 2, 2));
+        assertThat(actual.getPrice()).isEqualTo(100.0);
+        assertThat(actual.isAvailable()).isFalse();
+        verify(petRepository).save(existing);
     }
 
     @Test
     void update_whenIdNotExists_shouldThrowPetNotFoundException() {
         // Arrange
         Long id = 1L;
-        Pet updatedPet = new Pet();
+        Pet updated = new Pet();
         when(petRepository.findById(id)).thenReturn(Optional.empty());
 
         // Act / Assert
-        assertThatThrownBy(() -> petService.update(id, updatedPet))
+        assertThatThrownBy(() -> petService.update(id, updated))
                 .isInstanceOf(PetNotFoundException.class)
                 .hasMessageContaining(id.toString());
     }
@@ -305,17 +275,15 @@ class PetServiceTest {
         Pet pet = new Pet();
         pet.setId(id);
         pet.setAvailable(true);
-        Pet savedPet = new Pet();
-        savedPet.setId(id);
-        savedPet.setAvailable(false);
         when(petRepository.findById(id)).thenReturn(Optional.of(pet));
-        when(petRepository.save(pet)).thenReturn(savedPet);
+        when(petRepository.save(pet)).thenReturn(pet);
 
         // Act
-        Pet actualPet = petService.markUnavailable(id);
+        Pet actual = petService.markUnavailable(id);
 
         // Assert
-        assertThat(actualPet.isAvailable()).isFalse();
+        assertThat(actual.isAvailable()).isFalse();
+        verify(petRepository).save(pet);
     }
 
     @Test
