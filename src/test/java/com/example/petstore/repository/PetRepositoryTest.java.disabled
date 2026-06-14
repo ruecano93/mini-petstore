@@ -1,0 +1,235 @@
+package com.example.petstore.repository;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+
+import com.example.petstore.model.Pet;
+import java.util.List;
+import java.util.ArrayList;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+@ExtendWith(MockitoExtension.class)
+class PetRepositoryTest {
+
+	@Mock
+	private PetRepository petRepository;
+
+	private Pet petAvailableDog;
+	private Pet petAvailableCat;
+	private Pet petUnavailableDog;
+	private Pet petAvailableDogLowerCase;
+
+	@BeforeEach
+	void setUp() {
+		petAvailableDog = new Pet();
+		petAvailableDog.setId(1L);
+		petAvailableDog.setName("Fido");
+		petAvailableDog.setSpecies("Dog");
+		petAvailableDog.setAvailable(true);
+		petAvailableDog.setPrice(90.0);
+
+		petAvailableCat = new Pet();
+		petAvailableCat.setId(2L);
+		petAvailableCat.setName("Whiskers");
+		petAvailableCat.setSpecies("Cat");
+		petAvailableCat.setAvailable(true);
+		petAvailableCat.setPrice(150.0);
+
+		petUnavailableDog = new Pet();
+		petUnavailableDog.setId(3L);
+		petUnavailableDog.setName("Rex");
+		petUnavailableDog.setSpecies("Dog");
+		petUnavailableDog.setAvailable(false);
+		petUnavailableDog.setPrice(50.0);
+
+		petAvailableDogLowerCase = new Pet();
+		petAvailableDogLowerCase.setId(4L);
+		petAvailableDogLowerCase.setName("Buddy");
+		petAvailableDogLowerCase.setSpecies("dog");
+		petAvailableDogLowerCase.setAvailable(true);
+		petAvailableDogLowerCase.setPrice(80.0);
+	}
+
+	@Test
+	void findByAvailableTrue_whenPetsAvailable_shouldReturnListOfAvailablePets() {
+		// Arrange
+		List<Pet> availablePets = List.of(petAvailableDog, petAvailableCat, petAvailableDogLowerCase);
+		when(petRepository.findByAvailableTrue()).thenReturn(availablePets);
+
+		// Act
+		List<Pet> result = petRepository.findByAvailableTrue();
+
+		// Assert
+		assertThat(result).isNotEmpty()
+			.allMatch(Pet::isAvailable)
+			.containsExactlyInAnyOrderElementsOf(availablePets);
+	}
+
+	@Test
+	void findByAvailableTrue_whenNoPetsAvailable_shouldReturnEmptyList() {
+		// Arrange
+		when(petRepository.findByAvailableTrue()).thenReturn(List.of());
+
+		// Act
+		List<Pet> result = petRepository.findByAvailableTrue();
+
+		// Assert
+		assertThat(result).isEmpty();
+	}
+
+	@Test
+	void findBySpeciesIgnoreCase_whenSpeciesExists_shouldReturnListOfPetsIgnoringCase() {
+		// Arrange
+		List<Pet> petsOfSpecies = List.of(petAvailableDog, petAvailableDogLowerCase);
+		when(petRepository.findBySpeciesIgnoreCase("dog")).thenReturn(petsOfSpecies);
+
+		// Act
+		List<Pet> result = petRepository.findBySpeciesIgnoreCase("dog");
+
+		// Assert
+		assertThat(result).isNotEmpty()
+			.allMatch(p -> p.getSpecies().equalsIgnoreCase("dog"))
+			.containsExactlyInAnyOrderElementsOf(petsOfSpecies);
+	}
+
+	@Test
+	void findBySpeciesIgnoreCase_whenSpeciesNotExists_shouldReturnEmptyList() {
+		// Arrange
+		when(petRepository.findBySpeciesIgnoreCase("dragon")).thenReturn(List.of());
+
+		// Act
+		List<Pet> result = petRepository.findBySpeciesIgnoreCase("dragon");
+
+		// Assert
+		assertThat(result).isEmpty();
+	}
+
+	@Test
+	void findBySpeciesIgnoreCase_whenSpeciesIsNull_shouldThrowIllegalArgumentException() {
+		// Arrange
+		when(petRepository.findBySpeciesIgnoreCase(null))
+			.thenThrow(new IllegalArgumentException("Species must not be null"));
+
+		// Act / Assert
+		assertThatThrownBy(() -> petRepository.findBySpeciesIgnoreCase(null))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining("Species must not be null");
+	}
+
+	@Test
+	void findAvailableByMaxPrice_whenPetsAvailableUnderMaxPrice_shouldReturnListOfPets() {
+		// Arrange
+		Pet pet1 = new Pet();
+		pet1.setId(5L);
+		pet1.setName("CheapDog");
+		pet1.setSpecies("Dog");
+		pet1.setAvailable(true);
+		pet1.setPrice(50.0);
+
+		Pet pet2 = new Pet();
+		pet2.setId(6L);
+		pet2.setName("AffordableCat");
+		pet2.setSpecies("Cat");
+		pet2.setAvailable(true);
+		pet2.setPrice(100.0);
+
+		List<Pet> petsUnderMaxPrice = List.of(pet1, pet2);
+		when(petRepository.findAvailableByMaxPrice(100.0)).thenReturn(petsUnderMaxPrice);
+
+		// Act
+		List<Pet> result = petRepository.findAvailableByMaxPrice(100.0);
+
+		// Assert
+		assertThat(result).isNotEmpty()
+			.allMatch(p -> p.isAvailable() && p.getPrice() <= 100.0)
+			.containsExactlyInAnyOrderElementsOf(petsUnderMaxPrice);
+	}
+
+	@Test
+	void findAvailableByMaxPrice_whenNoPetsUnderMaxPrice_shouldReturnEmptyList() {
+		// Arrange
+		when(petRepository.findAvailableByMaxPrice(10.0)).thenReturn(List.of());
+
+		// Act
+		List<Pet> result = petRepository.findAvailableByMaxPrice(10.0);
+
+		// Assert
+		assertThat(result).isEmpty();
+	}
+
+	@Test
+	void findAvailableByMaxPrice_whenMaxPriceIsNegative_shouldThrowIllegalArgumentException() {
+		// Arrange
+		when(petRepository.findAvailableByMaxPrice(-1.0))
+			.thenThrow(new IllegalArgumentException("maxPrice must not be negative"));
+
+		// Act / Assert
+		assertThatThrownBy(() -> petRepository.findAvailableByMaxPrice(-1.0))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining("maxPrice must not be negative");
+	}
+
+	@Test
+	void existsByNameAndSpecies_whenPetExists_shouldReturnTrue() {
+		// Arrange
+		when(petRepository.existsByNameAndSpecies("Fido", "Dog")).thenReturn(true);
+
+		// Act
+		boolean exists = petRepository.existsByNameAndSpecies("Fido", "Dog");
+
+		// Assert
+		assertThat(exists).isTrue();
+	}
+
+	@Test
+	void existsByNameAndSpecies_whenPetNotExists_shouldReturnFalse() {
+		// Arrange
+		when(petRepository.existsByNameAndSpecies("Ghost", "Cat")).thenReturn(false);
+
+		// Act
+		boolean exists = petRepository.existsByNameAndSpecies("Ghost", "Cat");
+
+		// Assert
+		assertThat(exists).isFalse();
+	}
+
+	@Nested
+	class ExistsByNameAndSpeciesNullArgumentsTests {
+
+		@Test
+		void existsByNameAndSpecies_shouldThrowException_whenNameIsNull() {
+			// Arrange
+			when(petRepository.existsByNameAndSpecies(null, "Dog"))
+				.thenThrow(new IllegalArgumentException("Name and species must not be null"));
+
+			// Act / Assert
+			assertThatThrownBy(() -> petRepository.existsByNameAndSpecies(null, "Dog"))
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessageContaining("must not be null");
+		}
+
+		@Test
+		void existsByNameAndSpecies_shouldThrowException_whenSpeciesIsNull() {
+			// Arrange
+			when(petRepository.existsByNameAndSpecies("Fido", null))
+				.thenThrow(new IllegalArgumentException("Name and species must not be null"));
+
+			// Act / Assert
+			assertThatThrownBy(() -> petRepository.existsByNameAndSpecies("Fido", null))
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessageContaining("must not be null");
+		}
+	}
+}
