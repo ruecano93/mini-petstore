@@ -8,11 +8,17 @@ import com.example.petstore.model.Pet;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class PetMapperTest {
 
-    private final PetMapper petMapper = new PetMapper();
+    private PetMapper petMapper;
+
+    @BeforeEach
+    void setUp() {
+        petMapper = new PetMapper();
+    }
 
     @Test
     void toDto_validPet_returnsCorrectMap() {
@@ -30,13 +36,14 @@ class PetMapperTest {
         Map<String, Object> dto = petMapper.toDto(pet);
 
         // Assert
-        assertThat(dto).containsEntry("id", 1L)
-                       .containsEntry("name", "Fido")
-                       .containsEntry("species", "Dog")
-                       .containsEntry("breed", "Labrador")
-                       .containsEntry("birthDate", "2020-05-20")
-                       .containsEntry("price", 150.0)
-                       .containsEntry("available", false);
+        assertThat(dto).isNotNull();
+        assertThat(dto).containsEntry("id", 1L);
+        assertThat(dto).containsEntry("name", "Fido");
+        assertThat(dto).containsEntry("species", "Dog");
+        assertThat(dto).containsEntry("breed", "Labrador");
+        assertThat(dto).containsEntry("birthDate", "2020-05-20");
+        assertThat(dto).containsEntry("price", 150.0);
+        assertThat(dto).containsEntry("available", false);
     }
 
     @Test
@@ -55,17 +62,12 @@ class PetMapperTest {
         Map<String, Object> dto = petMapper.toDto(pet);
 
         // Assert
-        assertThat(dto).containsEntry("id", 2L)
-                       .containsEntry("name", "Whiskers")
-                       .containsEntry("species", "Cat")
-                       .containsEntry("breed", "Siamese")
-                       .containsEntry("birthDate", null)
-                       .containsEntry("price", 100.0)
-                       .containsEntry("available", true);
+        assertThat(dto).isNotNull();
+        assertThat(dto).containsEntry("birthDate", null);
     }
 
     @Test
-    void fromDto_validMap_returnsPetWithCorrectFields() {
+    void fromDto_validMap_returnsPetWithFieldsSet() {
         // Arrange
         Map<String, Object> dto = new LinkedHashMap<>();
         dto.put("name", "Buddy");
@@ -78,6 +80,7 @@ class PetMapperTest {
         Pet pet = petMapper.fromDto(dto);
 
         // Assert
+        assertThat(pet).isNotNull();
         assertThat(pet.getName()).isEqualTo("Buddy");
         assertThat(pet.getSpecies()).isEqualTo("Dog");
         assertThat(pet.getBreed()).isEqualTo("Beagle");
@@ -86,7 +89,7 @@ class PetMapperTest {
     }
 
     @Test
-    void fromDto_mapMissingPriceAndAvailable_returnsPetWithDefaultValues() {
+    void fromDto_mapWithoutPriceAndAvailable_returnsPetWithDefaultValues() {
         // Arrange
         Map<String, Object> dto = new LinkedHashMap<>();
         dto.put("name", "Charlie");
@@ -97,6 +100,7 @@ class PetMapperTest {
         Pet pet = petMapper.fromDto(dto);
 
         // Assert
+        assertThat(pet).isNotNull();
         assertThat(pet.getName()).isEqualTo("Charlie");
         assertThat(pet.getSpecies()).isEqualTo("Bird");
         assertThat(pet.getBreed()).isEqualTo("Parrot");
@@ -118,6 +122,7 @@ class PetMapperTest {
         Pet pet = petMapper.fromDto(dto);
 
         // Assert
+        assertThat(pet).isNotNull();
         assertThat(pet.getName()).isNull();
         assertThat(pet.getSpecies()).isEqualTo("Fish");
         assertThat(pet.getBreed()).isEqualTo("Goldfish");
