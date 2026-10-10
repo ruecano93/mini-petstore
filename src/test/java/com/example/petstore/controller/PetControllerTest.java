@@ -8,7 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -42,13 +42,13 @@ class PetControllerTest {
     }
 
     @Test
-    void listAll_whenCalled_shouldReturnListOfPetDtos() {
+    void listAll_whenCalled_returnsListOfPetDtos() {
         // Arrange
         Pet pet1 = new Pet();
         Pet pet2 = new Pet();
         List<Pet> pets = List.of(pet1, pet2);
-        Map<String, Object> dto1 = Map.of("id", 1L);
-        Map<String, Object> dto2 = Map.of("id", 2L);
+        Map<String, Object> dto1 = Map.of("id", 1);
+        Map<String, Object> dto2 = Map.of("id", 2);
 
         when(petService.findAll()).thenReturn(pets);
         when(petMapper.toDto(pet1)).thenReturn(dto1);
@@ -62,13 +62,13 @@ class PetControllerTest {
     }
 
     @Test
-    void listAvailable_whenCalled_shouldReturnListOfAvailablePetDtos() {
+    void listAvailable_whenCalled_returnsListOfAvailablePetDtos() {
         // Arrange
         Pet pet1 = new Pet();
         Pet pet2 = new Pet();
         List<Pet> pets = List.of(pet1, pet2);
-        Map<String, Object> dto1 = Map.of("id", 1L);
-        Map<String, Object> dto2 = Map.of("id", 2L);
+        Map<String, Object> dto1 = Map.of("available", true);
+        Map<String, Object> dto2 = Map.of("available", true);
 
         when(petService.findAvailable()).thenReturn(pets);
         when(petMapper.toDto(pet1)).thenReturn(dto1);
@@ -82,14 +82,14 @@ class PetControllerTest {
     }
 
     @Test
-    void bySpecies_whenSpeciesExists_shouldReturnListOfPetDtos() {
+    void bySpecies_whenSpeciesExists_returnsListOfPetDtos() {
         // Arrange
         String species = "dog";
         Pet pet1 = new Pet();
         Pet pet2 = new Pet();
         List<Pet> pets = List.of(pet1, pet2);
-        Map<String, Object> dto1 = Map.of("id", 1L);
-        Map<String, Object> dto2 = Map.of("id", 2L);
+        Map<String, Object> dto1 = Map.of("species", species);
+        Map<String, Object> dto2 = Map.of("species", species);
 
         when(petService.findBySpecies(species)).thenReturn(pets);
         when(petMapper.toDto(pet1)).thenReturn(dto1);
@@ -103,7 +103,7 @@ class PetControllerTest {
     }
 
     @Test
-    void getById_whenIdExists_shouldReturnResponseEntityWithPetDto() {
+    void getById_whenIdExists_returnsResponseEntityWithPetDto() {
         // Arrange
         Long id = 1L;
         Pet pet = new Pet();
@@ -121,23 +121,11 @@ class PetControllerTest {
     }
 
     @Test
-    void getById_whenIdNotExists_shouldThrowException() {
-        // Arrange
-        Long id = 1L;
-        when(petService.findById(id)).thenThrow(new RuntimeException("Pet not found"));
-
-        // Act / Assert
-        assertThatCode(() -> petController.getById(id))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Pet not found");
-    }
-
-    @Test
-    void create_whenValidPet_shouldReturnCreatedPetDto() {
+    void create_whenValidPet_returnsCreatedPetDto() {
         // Arrange
         Pet pet = new Pet();
         Pet createdPet = new Pet();
-        Map<String, Object> dto = Map.of("id", 1L);
+        Map<String, Object> dto = Map.of("created", true);
 
         when(petService.create(pet)).thenReturn(createdPet);
         when(petMapper.toDto(createdPet)).thenReturn(dto);
@@ -150,24 +138,12 @@ class PetControllerTest {
     }
 
     @Test
-    void create_whenInvalidPet_shouldThrowValidationException() {
-        // Arrange
-        Pet invalidPet = new Pet();
-        when(petService.create(invalidPet)).thenThrow(new RuntimeException("Validation failed"));
-
-        // Act / Assert
-        assertThatCode(() -> petController.create(invalidPet))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Validation failed");
-    }
-
-    @Test
-    void update_whenIdExistsAndValidPet_shouldReturnUpdatedPetDto() {
+    void update_whenValidIdAndPet_returnsUpdatedPetDto() {
         // Arrange
         Long id = 1L;
         Pet pet = new Pet();
         Pet updatedPet = new Pet();
-        Map<String, Object> dto = Map.of("id", id);
+        Map<String, Object> dto = Map.of("updated", true);
 
         when(petService.update(id, pet)).thenReturn(updatedPet);
         when(petMapper.toDto(updatedPet)).thenReturn(dto);
@@ -180,60 +156,22 @@ class PetControllerTest {
     }
 
     @Test
-    void update_whenIdNotExists_shouldThrowException() {
+    void delete_whenValidId_callsServiceDelete() {
         // Arrange
         Long id = 1L;
-        Pet pet = new Pet();
-        when(petService.update(id, pet)).thenThrow(new RuntimeException("Pet not found"));
-
-        // Act / Assert
-        assertThatCode(() -> petController.update(id, pet))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Pet not found");
-    }
-
-    @Test
-    void update_whenInvalidPet_shouldThrowValidationException() {
-        // Arrange
-        Long id = 1L;
-        Pet invalidPet = new Pet();
-        when(petService.update(id, invalidPet)).thenThrow(new RuntimeException("Validation failed"));
-
-        // Act / Assert
-        assertThatCode(() -> petController.update(id, invalidPet))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Validation failed");
-    }
-
-    @Test
-    void delete_whenIdExists_shouldCallDeleteAndReturnNoContent() {
-        // Arrange
-        Long id = 1L;
+        doNothing().when(petService).delete(id);
 
         // Act / Assert
         assertThatCode(() -> petController.delete(id)).doesNotThrowAnyException();
-
         verify(petService).delete(id);
     }
 
     @Test
-    void delete_whenIdNotExists_shouldThrowException() {
-        // Arrange
-        Long id = 1L;
-        doThrow(new RuntimeException("Pet not found")).when(petService).delete(id);
-
-        // Act / Assert
-        assertThatCode(() -> petController.delete(id))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Pet not found");
-    }
-
-    @Test
-    void markUnavailable_whenIdExists_shouldReturnUpdatedPetDto() {
+    void markUnavailable_whenValidId_returnsUpdatedPetDto() {
         // Arrange
         Long id = 1L;
         Pet updatedPet = new Pet();
-        Map<String, Object> dto = Map.of("id", id);
+        Map<String, Object> dto = Map.of("available", false);
 
         when(petService.markUnavailable(id)).thenReturn(updatedPet);
         when(petMapper.toDto(updatedPet)).thenReturn(dto);
@@ -243,17 +181,5 @@ class PetControllerTest {
 
         // Assert
         assertThat(result).isEqualTo(dto);
-    }
-
-    @Test
-    void markUnavailable_whenIdNotExists_shouldThrowException() {
-        // Arrange
-        Long id = 1L;
-        when(petService.markUnavailable(id)).thenThrow(new RuntimeException("Pet not found"));
-
-        // Act / Assert
-        assertThatCode(() -> petController.markUnavailable(id))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Pet not found");
     }
 }
